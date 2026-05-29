@@ -185,12 +185,14 @@ async def run_server(dev_mode: bool = False):
                     status_code=200,
                 )
 
-        # Return TwiML that bridges to our WebSocket
+        # Return TwiML that bridges to WebSocket
+        # Use Cloudflare Tunnel domain for production (voice.reneetoufee.com)
+        host = os.getenv("PIPECAT_PUBLIC_HOST", "voice.reneetoufee.com")
         twiml = f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <Response>
             <Connect>
-                <Stream url="wss://{HOST}/twilio-media">
+                <Stream url="wss://{host}/twilio-media">
                     <Parameter name="caller" value="{ALLOWED_CALLER}" />
                 </Stream>
             </Connect>

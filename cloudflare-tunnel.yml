@@ -1,12 +1,12 @@
 # Cloudflare Tunnel configuration snippet
-# Add this to your existing /etc/cloudflared/config.yml
+# Add this to /etc/cloudflared/config.yml or ~/.cloudflared/config.yml
 
 # Hermes Voice Pipeline (Twilio → Pipecat)
-- hostname: voice.hermes.local
+- hostname: voice.reneetoufee.com
   service: http://localhost:8080
 
-# If you don't already have a tunnel running:
+# Setup (one-time):
 #   cloudflared tunnel login
-#   cloudflared tunnel create hermes-tunnel
-#   cloudflared tunnel route dns hermes-tunnel voice.hermes.local
-#   cloudflared tunnel run hermes-tunnel
+#   cloudflared tunnel create hermes-voice
+#   cloudflared tunnel route dns hermes-voice voice.reneetoufee.com
+#   cloudflared tunnel run hermes-voice

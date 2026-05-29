@@ -79,11 +79,11 @@ Pipecat handles these natively:
 
 ## Tunneling Strategy
 
-Production: Cloudflare Tunnel (cloudflared)
-- Already running on Dell R760xd
-- voice.hermes.local mapped to localhost:8080
-- Zero open ports, automatic TLS
-- If cloudflared is down, calls fail gracefully (Twilio gets 502, you get busy signal)
+# Production: Cloudflare Tunnel (cloudflared)
+# Already running on Dell R760xd
+# voice.reneetoufee.com mapped to localhost:8080
+# Zero open ports, automatic TLS
+# If cloudflared is down, calls fail gracefully (Twilio gets 502, you get busy signal)
 
 Development: ngrok
 - ngrok http 8080

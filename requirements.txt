@@ -22,4 +22,10 @@ structlog>=24.0.0
 
 # Optional: local STT fallback (Tesla P4)
 # faster-whisper>=1.0.0
-fastapi>=0.136.0\nuvicorn>=0.48.0
+
+# Web server (FastAPI + uvicorn for Twilio webhook)
+fastapi>=0.136.0
+uvicorn>=0.48.0
+
+# Form parsing (required by FastAPI for Twilio's POST)
+python-multipart>=0.0.18

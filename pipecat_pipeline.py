@@ -98,7 +98,11 @@ def build_pipeline(stream_sid: str = ""):
             audio_in_sample_rate=8000,
             audio_out_sample_rate=8000,
             vad_analyzer=vad,
-            serializer=TwilioFrameSerializer(stream_sid=stream_sid),
+            serializer=TwilioFrameSerializer(
+                stream_sid=stream_sid,
+                account_sid=TWILIO_SID,
+                auth_token=TWILIO_TOKEN,
+            ),
         )
     )
 

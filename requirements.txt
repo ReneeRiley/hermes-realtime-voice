@@ -1,0 +1,24 @@
+# Pipecat + dependencies
+pipecat-ai[twilio]>=1.3.0
+
+# STT: Groq
+groq>=0.9.0
+
+# TTS: ElevenLabs
+elevenlabs>=1.5.0
+
+# LLM: OpenRouter
+httpx>=0.27.0
+
+# Audio processing
+pydub>=0.25.1
+numpy>=1.26.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# Logging
+structlog>=24.0.0
+
+# Optional: local STT fallback (Tesla P4)
+# faster-whisper>=1.0.0

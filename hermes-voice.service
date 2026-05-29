@@ -1,0 +1,23 @@
+[Unit]
+Description=Hermes Real-Time Voice Pipeline (Pipecat + Twilio)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=renee
+WorkingDirectory=/home/renee/projects/hermes-realtime-voice
+EnvironmentFile=/home/renee/projects/hermes-realtime-voice/.env
+ExecStart=/home/renee/projects/hermes-realtime-voice/venv/bin/python pipecat_pipeline.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hermes-voice
+
+# Resource limits
+MemoryHigh=2G
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target

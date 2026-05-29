@@ -43,12 +43,6 @@ ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_turbo_v2_5")
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4-pro")
 
-HERMES_SYSTEM_PROMPT = """You are Loki, an AI assistant with a warm, snarky personality.
-You're speaking to Renee via a real-time voice call.
-Keep responses conversational and concise — 1-3 sentences max.
-Use natural, spoken language. No markdown, no lists, no code blocks.
-You're her homelab AI companion. Be helpful but don't be a robot."""
-
 
 def validate_config():
     required = {
@@ -68,11 +62,13 @@ def validate_config():
 
 # ── Pipecat Pipeline (1.3.0 API) ─────────────────────────────────
 
-def build_pipeline(stream_sid: str = ""):
+def build_pipeline(websocket, stream_sid: str = ""):
+    """Build a Pipecat pipeline for a given Twilio WebSocket connection."""
     from pipecat.audio.vad.silero import SileroVADAnalyzer
     from pipecat.audio.vad.vad_analyzer import VADParams
     from pipecat.pipeline.pipeline import Pipeline
     from pipecat.pipeline.task import PipelineParams, PipelineTask
+    from pipecat.pipeline.runner import PipelineRunner
     from pipecat.services.groq.stt import GroqSTTService
     from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
     from pipecat.services.openai.llm import OpenAILLMService
@@ -92,6 +88,7 @@ def build_pipeline(stream_sid: str = ""):
 
     # Transport: Twilio WebSocket ↔ Pipecat audio frames
     transport = FastAPIWebsocketTransport(
+        websocket=websocket,
         params=FastAPIWebsocketParams(
             audio_in_enabled=True,
             audio_out_enabled=True,
@@ -103,7 +100,7 @@ def build_pipeline(stream_sid: str = ""):
                 account_sid=TWILIO_SID,
                 auth_token=TWILIO_TOKEN,
             ),
-        )
+        ),
     )
 
     # STT: Groq Whisper
@@ -143,7 +140,10 @@ def build_pipeline(stream_sid: str = ""):
         ),
     )
 
-    return task, transport
+    runner = PipelineRunner()
+    runner.add_workers([task])
+
+    return runner, task
 
 
 # ── FastAPI Server ────────────────────────────────────────────────
@@ -164,7 +164,6 @@ async def run_server(dev_mode: bool = False):
         """Twilio calls this when a call comes in. Returns TwiML."""
         form = await request.form()
         caller = form.get("From", "")
-        call_sid = form.get("CallSid", "")
 
         if ALLOWED_CALLER and caller != ALLOWED_CALLER:
             logger.warning(f"Rejected call from {caller}")
@@ -173,7 +172,7 @@ async def run_server(dev_mode: bool = False):
                 media_type="application/xml",
             )
 
-        logger.info(f"Incoming call from {caller} (CallSid: {call_sid})")
+        logger.info(f"Incoming call from {caller}")
 
         twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -187,16 +186,20 @@ async def run_server(dev_mode: bool = False):
     async def twilio_media_stream(ws: WebSocket):
         """Raw audio WebSocket from Twilio Media Streams."""
         await ws.accept()
+        logger.info("Twilio media stream connected")
 
-        # Twilio sends a "start" event with stream_sid
-        stream_sid = ""
+        runner, task = build_pipeline(websocket=ws)
 
-        task, transport = build_pipeline(stream_sid=stream_sid)
-
-        # Run the Pipecat task with this WebSocket
-        # FastAPIWebsocketTransport needs the WebSocket passed at runtime
-        await transport.run(ws)
-
+        try:
+            await runner.run()
+        except Exception as e:
+            logger.error(f"Pipeline error: {e}")
+        finally:
+            logger.info("Pipeline ended, closing WebSocket")
+            try:
+                await ws.close()
+            except Exception:
+                pass
 
     logger.info(f"Starting on {HOST}:{PORT}")
     config = uvicorn.Config(app, host=HOST, port=PORT, log_level="info")
